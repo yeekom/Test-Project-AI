@@ -20,22 +20,33 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(API_URL);
             const text = await response.text();
             const json = JSON.parse(text.substr(47).slice(0, -2)); // Clean up the JSON response
-            allData = json.table.rows.map(row => row.c.map(cell => (cell ? cell.v : "")));
-            displayedData = allData.slice(0, rowsPerPage);
-            renderTable(displayedData);
+
+            // Check if the data exists in the expected format
+            if (json && json.table && json.table.rows) {
+                allData = json.table.rows.map(row => row.c.map(cell => (cell ? cell.v : "")));
+                // Initially display the first rowsPerPage rows
+                displayedData = allData.slice(0, rowsPerPage);
+                renderTable(displayedData);
+            } else {
+                console.error("Failed to load data in the expected format");
+            }
         } catch (error) {
             console.error("Error fetching data:", error);
         }
     }
 
     function renderTable(data) {
-        resultsTableBody.innerHTML = data.map(row => `
-            <tr>
-                ${row.map((cell, index) =>
-                    index === 8 ? `<td><a href="${cell}" target="_blank">Download</a></td>` : `<td>${cell}</td>`
-                ).join("")}
-            </tr>
-        `).join("");
+        if (data.length === 0) {
+            resultsTableBody.innerHTML = "<tr><td colspan='9'>No data found.</td></tr>";
+        } else {
+            resultsTableBody.innerHTML = data.map(row => `
+                <tr>
+                    ${row.map((cell, index) =>
+                        index === 8 ? `<td><a href="${cell}" target="_blank">Download</a></td>` : `<td>${cell}</td>`
+                    ).join("")}
+                </tr>
+            `).join("");
+        }
     }
 
     function handleSearch(data) {
