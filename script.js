@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(loadMoreButton);
 
     let allData = [];
+    let filteredData = [];
     let displayedData = [];
     let currentIndex = 0;
     const rowsPerPage = 50;
@@ -24,8 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Check if the data exists in the expected format
             if (json && json.table && json.table.rows) {
                 allData = json.table.rows.map(row => row.c.map(cell => (cell ? cell.v : "")));
-                // Initially display the first rowsPerPage rows
-                displayedData = allData.slice(0, rowsPerPage);
+                filteredData = allData; // Initially, no filter is applied
+                displayedData = filteredData.slice(0, rowsPerPage); // Display first 50 rows
                 renderTable(displayedData);
             } else {
                 console.error("Failed to load data in the expected format");
@@ -49,26 +50,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function handleSearch(data) {
-        const query = searchInput.value.toLowerCase();
-        const filteredData = data.filter(row =>
+    function handleSearch(query) {
+        // Apply search filter on the full dataset
+        filteredData = allData.filter(row =>
             (row[1] && row[1].toLowerCase().includes(query)) || // Search in Name
             (row[2] && row[2].toLowerCase().includes(query))   // Search in Notes
         );
-        displayedData = filteredData.slice(0, rowsPerPage); // Reset to first 50 results after search
+        currentIndex = 0; // Reset the current index when search is done
+        displayedData = filteredData.slice(0, rowsPerPage); // Show first 50 results after search
         renderTable(displayedData);
     }
 
     loadMoreButton.addEventListener("click", () => {
         currentIndex += rowsPerPage;
-        const nextData = allData.slice(currentIndex, currentIndex + rowsPerPage);
+        const nextData = filteredData.slice(currentIndex, currentIndex + rowsPerPage);
         if (nextData.length > 0) {
             displayedData.push(...nextData);
             renderTable(displayedData);
         }
     });
 
+    // Initial data fetch and render
     fetchData().then(() => {
-        searchInput.addEventListener("input", () => handleSearch(allData));
+        searchInput.addEventListener("input", () => handleSearch(searchInput.value.toLowerCase()));
     });
 });
